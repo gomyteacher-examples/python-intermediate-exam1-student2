@@ -2,18 +2,33 @@ import heapq
 from collections import defaultdict
 
 class Graph:
+    """Graph class for shortest paths"""
+    
     def __init__(self):
         self.graph = defaultdict(list)
         self.vertices = set()
     
     def add_edge(self, u, v, weight):
+        """Add edge to graph"""
         self.graph[u].append((v, weight))
         self.vertices.add(u)
         self.vertices.add(v)
+        return self  # method chaining
+    
+    @classmethod
+    def from_adjacency_list(cls, adj_list):
+        """Build graph from adjacency list - copied from example"""
+        graph = cls()
+        for vertex, edges in adj_list.items():
+            for neighbor, weight in edges:
+                graph.add_edge(vertex, neighbor, weight)
+        return graph
     
     def dijkstra(self, start, end):
-        # dijkstra algorithm
+        """Find shortest path using dijkstra algorithm"""
+        # basic dijkstra with path tracking
         distances = {vertex: float('infinity') for vertex in self.vertices}
+        previous = {}  # track path
         distances[start] = 0
         
         pq = [(0, start)]
@@ -32,24 +47,39 @@ class Graph:
                 
                 if distance < distances[neighbor]:
                     distances[neighbor] = distance
+                    previous[neighbor] = current_vertex
                     heapq.heappush(pq, (distance, neighbor))
         
-        # just return distance
-        return distances[end] if end in distances else float('infinity')
+        # build path - hope this works
+        path = []
+        current = end
+        while current in previous:
+            path.append(current)
+            current = previous[current]
+        path.append(start)
+        path.reverse()
+        
+        return distances[end], path
     
     def __str__(self):
         return f"Graph with {len(self.vertices)} vertices"
 
 if __name__ == "__main__":
-    g = Graph()
-    g.add_edge('A', 'B', 4)
-    g.add_edge('A', 'C', 2)
-    g.add_edge('B', 'C', 1)
-    g.add_edge('B', 'D', 5)
-    g.add_edge('C', 'D', 8)
-    g.add_edge('C', 'E', 10)
-    g.add_edge('D', 'E', 2)
+    # test with the exam example
+    g = Graph.from_adjacency_list({
+        'A': [('B', 4), ('C', 2)],
+        'B': [('C', 1), ('D', 5)],
+        'C': [('D', 8), ('E', 10)],
+        'D': [('E', 2)]
+    })
     
-    distance = g.dijkstra('A', 'E')
-    print(f"Shortest distance from A to E: {distance}")
-    print(g)
+    distance, path = g.dijkstra('A', 'E')
+    print(f"Shortest distance: {distance}, Path: {' -> '.join(path)}")
+    
+    # test method chaining 
+    g2 = Graph().add_edge('X', 'Y', 3).add_edge('Y', 'Z', 2)
+    print(f"Graph 2: {g2}")
+    
+    # basic test
+    dist2, path2 = g2.dijkstra('X', 'Z')
+    print(f"X to Z: distance={dist2}, path={path2}")
